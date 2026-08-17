@@ -33,8 +33,40 @@ function save(key, value) {
 let events = load(KEY_EVENTS, []);
 let session = load(KEY_SESSION, null);
 
+const uid = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+// Entries written before ids existed still need to be editable.
+if (events.some((e) => !e.id)) {
+  for (const e of events) if (!e.id) e.id = uid();
+  save(KEY_EVENTS, events);
+}
+
 function log(type, extra = {}) {
-  events.push({ t: now(), type, ...extra });
+  events.push({ id: uid(), t: now(), type, ...extra });
+  save(KEY_EVENTS, events);
+}
+
+function updateEvent(id, changes) {
+  const e = events.find((x) => x.id === id);
+  if (!e) return;
+  Object.assign(e, changes);
+  for (const k of ["task", "note", "feeling"]) if (!e[k]) delete e[k];
+  save(KEY_EVENTS, events);
+}
+
+// A task name is one label the user typed, copied onto several entries.
+// Correcting it should correct all of them, not leave the typo scattered.
+function renameTask(from, to) {
+  for (const e of events) {
+    if (e.task !== from) continue;
+    if (to) e.task = to;
+    else delete e.task;
+  }
+  save(KEY_EVENTS, events);
+}
+
+function deleteEvent(id) {
+  events = events.filter((e) => e.id !== id);
   save(KEY_EVENTS, events);
 }
 
@@ -297,6 +329,9 @@ $("saveBail").addEventListener("click", () => {
 
 /* ---------- log ---------- */
 
+let editingId = null;
+let confirmingId = null;
+
 function renderLog() {
   const s = stats();
   const bails = events.filter((e) => e.type === "bail");
@@ -330,47 +365,152 @@ function renderLog() {
   $("entries").innerHTML = "";
 
   for (const e of recent) {
-    const li = document.createElement("li");
-    const when = new Date(e.t).toLocaleString(undefined, {
-      weekday: "short", hour: "numeric", minute: "2-digit"
+    $("entries").append(editingId === e.id ? editRow(e) : entryRow(e));
+  }
+}
+
+function labelFor(e) {
+  if (e.type === "stay") return ["Stayed", "stayed"];
+  if (e.type === "bail") return ["Quit", "bailed"];
+  if (e.type === "complete") return [`Finished ${e.minutes} min`, ""];
+  if (e.type === "extend") return [`Kept going, +${e.minutes} min`, ""];
+  return ["Started", ""];
+}
+
+function entryRow(e) {
+  const li = document.createElement("li");
+
+  const head = document.createElement("div");
+  const [text, cls] = labelFor(e);
+  const tag = document.createElement("span");
+  tag.className = cls;
+  tag.textContent = text;
+  head.append(tag);
+  if (e.task) head.append(document.createTextNode(` · ${e.task}`));
+  li.append(head);
+
+  const said = [e.feeling, e.note].filter(Boolean).join(" — ");
+  if (said) {
+    const s2 = document.createElement("span");
+    s2.className = "said";
+    s2.textContent = said;
+    li.append(s2);
+  }
+
+  const when = document.createElement("span");
+  when.className = "when";
+  when.textContent = new Date(e.t).toLocaleString(undefined, {
+    weekday: "short", hour: "numeric", minute: "2-digit"
+  });
+  li.append(document.createElement("br"), when);
+
+  const btns = document.createElement("div");
+  btns.className = "rowbtns";
+
+  if (confirmingId === e.id) {
+    const sure = document.createElement("button");
+    sure.className = "mini danger";
+    sure.textContent = "Delete for good";
+    sure.addEventListener("click", () => {
+      deleteEvent(e.id);
+      confirmingId = null;
+      renderLog();
     });
 
-    const head = document.createElement("div");
-    const tag = document.createElement("span");
+    const nope = document.createElement("button");
+    nope.className = "mini";
+    nope.textContent = "Keep it";
+    nope.addEventListener("click", () => {
+      confirmingId = null;
+      renderLog();
+    });
 
-    if (e.type === "stay") {
-      tag.className = "stayed";
-      tag.textContent = "Stayed";
-    } else if (e.type === "bail") {
-      tag.className = "bailed";
-      tag.textContent = "Quit";
-    } else if (e.type === "complete") {
-      tag.textContent = `Finished ${e.minutes} min`;
-    } else if (e.type === "extend") {
-      tag.textContent = `Kept going, +${e.minutes} min`;
-    } else {
-      tag.textContent = "Started";
-    }
+    btns.append(sure, nope);
+  } else {
+    const edit = document.createElement("button");
+    edit.className = "mini";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => {
+      editingId = e.id;
+      confirmingId = null;
+      renderLog();
+    });
 
-    head.append(tag);
-    if (e.task) head.append(document.createTextNode(` · ${e.task}`));
-    li.append(head);
+    const del = document.createElement("button");
+    del.className = "mini danger";
+    del.textContent = "Delete";
+    del.addEventListener("click", () => {
+      confirmingId = e.id;
+      editingId = null;
+      renderLog();
+    });
 
-    const said = [e.feeling, e.note].filter(Boolean).join(" — ");
-    if (said) {
-      const s2 = document.createElement("span");
-      s2.className = "said";
-      s2.textContent = said;
-      li.append(s2);
-    }
-
-    const w = document.createElement("span");
-    w.className = "when";
-    w.textContent = when;
-    li.append(document.createElement("br"), w);
-
-    $("entries").append(li);
+    btns.append(edit, del);
   }
+
+  li.append(btns);
+  return li;
+}
+
+function editRow(e) {
+  const li = document.createElement("li");
+
+  const form = document.createElement("div");
+  form.className = "editform";
+
+  const taskLabel = document.createElement("label");
+  taskLabel.textContent = "What it was";
+  const task = document.createElement("input");
+  task.type = "text";
+  task.value = e.task || "";
+  task.placeholder = "leave empty to clear it";
+  form.append(taskLabel, task);
+
+  let note = null;
+  if (e.type === "bail") {
+    const noteLabel = document.createElement("label");
+    noteLabel.textContent = "Note";
+    note = document.createElement("input");
+    note.type = "text";
+    note.value = e.note || "";
+    form.append(noteLabel, note);
+  }
+
+  const hint = document.createElement("p");
+  hint.className = "note";
+  hint.style.margin = "2px 0 0";
+  hint.textContent = "Fixing the name fixes it on every entry that uses it.";
+  form.append(hint);
+
+  const btns = document.createElement("div");
+  btns.className = "rowbtns";
+
+  const save = document.createElement("button");
+  save.className = "mini";
+  save.textContent = "Save";
+  save.addEventListener("click", () => {
+    const wanted = task.value.trim().slice(0, 120);
+    if (note) updateEvent(e.id, { note: note.value.trim().slice(0, 200) });
+    if (wanted !== (e.task || "")) renameTask(e.task, wanted);
+    editingId = null;
+    renderLog();
+  });
+
+  const cancel = document.createElement("button");
+  cancel.className = "mini";
+  cancel.textContent = "Cancel";
+  cancel.addEventListener("click", () => {
+    editingId = null;
+    renderLog();
+  });
+
+  btns.append(save, cancel);
+  form.append(btns);
+  li.append(form);
+
+  task.addEventListener("keydown", (ev) => { if (ev.key === "Enter") save.click(); });
+  setTimeout(() => task.focus(), 40);
+  return li;
 }
 
 $("logBack").addEventListener("click", () => show("home"));
