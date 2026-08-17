@@ -250,7 +250,12 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
   font-size: 14.5px;
 }
 
-.entries .when { color: var(--muted); font-size: 12.5px; }
+.entryrow { display: flex; align-items: flex-start; gap: 12px; }
+.entrymain { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sidebtns { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.sidebtns .mini { width: 78px; padding: 8px 4px; text-align: center; }
+
+.entries .when { display: block; margin-top: 4px; color: var(--muted); font-size: 12.5px; }
 .entries .stayed { color: var(--ok); font-weight: 600; }
 .entries .bailed { color: var(--warn); font-weight: 600; }
 .entries .said { display: block; margin-top: 2px; color: var(--muted); }
@@ -259,7 +264,7 @@ input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 
 
 .mini {
   min-height: 40px;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface);

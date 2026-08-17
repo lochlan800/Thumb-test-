@@ -31,7 +31,8 @@ survive the wait. Staying logs a rep. Quitting logs a quit, and that's fine.
 **A blameless quit log.** When you do quit: one tap for how it felt, one
 optional line. No shaming copy, no broken-streak animation.
 
-**Everything is editable.** Every entry in the log has Edit and Delete. Fix a
+**Everything is editable.** The log lists every activity you've done, newest
+first, with Edit and Delete at the side of each one. Fix a
 typo, correct a note, or remove something you logged by accident — deleting
 adjusts the counts to match. Renaming a task corrects it on every entry that
 carries the name, so a typo doesn't linger in the history. Deleting takes two

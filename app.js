@@ -360,7 +360,7 @@ function renderLog() {
     $("bars").append(row);
   }
 
-  const recent = events.slice(-15).reverse();
+  const recent = events.slice().reverse();   // everything, newest first
   $("logEmpty").classList.toggle("hidden", recent.length > 0);
   $("entries").innerHTML = "";
 
@@ -380,6 +380,12 @@ function labelFor(e) {
 function entryRow(e) {
   const li = document.createElement("li");
 
+  const row = document.createElement("div");
+  row.className = "entryrow";
+
+  const main = document.createElement("div");
+  main.className = "entrymain";
+
   const head = document.createElement("div");
   const [text, cls] = labelFor(e);
   const tag = document.createElement("span");
@@ -387,27 +393,55 @@ function entryRow(e) {
   tag.textContent = text;
   head.append(tag);
   if (e.task) head.append(document.createTextNode(` · ${e.task}`));
-  li.append(head);
+  main.append(head);
 
   const said = [e.feeling, e.note].filter(Boolean).join(" — ");
   if (said) {
     const s2 = document.createElement("span");
     s2.className = "said";
     s2.textContent = said;
-    li.append(s2);
+    main.append(s2);
   }
 
   const when = document.createElement("span");
   when.className = "when";
   when.textContent = new Date(e.t).toLocaleString(undefined, {
-    weekday: "short", hour: "numeric", minute: "2-digit"
+    weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit"
   });
-  li.append(document.createElement("br"), when);
+  main.append(when);
+  row.append(main);
 
-  const btns = document.createElement("div");
-  btns.className = "rowbtns";
+  // Side buttons, stacked so a long task name keeps the width it needs.
+  const side = document.createElement("div");
+  side.className = "sidebtns";
 
+  const edit = document.createElement("button");
+  edit.className = "mini";
+  edit.textContent = "Edit";
+  edit.addEventListener("click", () => {
+    editingId = e.id;
+    confirmingId = null;
+    renderLog();
+  });
+
+  const del = document.createElement("button");
+  del.className = "mini danger";
+  del.textContent = "Delete";
+  del.addEventListener("click", () => {
+    confirmingId = e.id;
+    editingId = null;
+    renderLog();
+  });
+
+  side.append(edit, del);
+  row.append(side);
+  li.append(row);
+
+  // The confirm needs more words than fit at the side, so it drops below.
   if (confirmingId === e.id) {
+    const bar = document.createElement("div");
+    bar.className = "rowbtns";
+
     const sure = document.createElement("button");
     sure.className = "mini danger";
     sure.textContent = "Delete for good";
@@ -425,30 +459,10 @@ function entryRow(e) {
       renderLog();
     });
 
-    btns.append(sure, nope);
-  } else {
-    const edit = document.createElement("button");
-    edit.className = "mini";
-    edit.textContent = "Edit";
-    edit.addEventListener("click", () => {
-      editingId = e.id;
-      confirmingId = null;
-      renderLog();
-    });
-
-    const del = document.createElement("button");
-    del.className = "mini danger";
-    del.textContent = "Delete";
-    del.addEventListener("click", () => {
-      confirmingId = e.id;
-      editingId = null;
-      renderLog();
-    });
-
-    btns.append(edit, del);
+    bar.append(sure, nope);
+    li.append(bar);
   }
 
-  li.append(btns);
   return li;
 }
 
