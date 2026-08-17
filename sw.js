@@ -1,5 +1,7 @@
-// Offline is the point: the urge doesn't wait for a signal.
-const CACHE = "stay-v1";
+// Offline has to work — the urge doesn't wait for a signal — but a cached copy
+// must never outrank a newer one, or updates never reach a phone that has
+// already opened the app once.
+const CACHE = "stay-v2";
 const SHELL = ["./", "index.html", "style.css", "app.js", "manifest.webmanifest", "icon-192.png"];
 
 self.addEventListener("install", (e) => {
@@ -14,16 +16,16 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+// Network first, cache as the safety net.
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
   e.respondWith(
-    caches.match(e.request).then((hit) =>
-      hit || fetch(e.request).then((res) => {
-        // Keep the cache warm so a later update survives going offline.
+    fetch(e.request)
+      .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
         return res;
-      }).catch(() => hit)
-    )
+      })
+      .catch(() => caches.match(e.request).then((hit) => hit || caches.match("./")))
   );
 });
