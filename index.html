@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stay</title>
+<meta name="description" content="A rep counter for the moments you want to quit and don't.">
+<meta name="theme-color" content="#faf8f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16151a" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stay">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+<!-- HOME -->
+<section id="home" class="hidden">
+  <div class="hero">
+    <span class="n" id="heroCount">0</span>
+    <span class="cap">times you felt the pull and stayed</span>
+  </div>
+
+  <div class="row">
+    <div class="stat"><b id="statWeek">0</b><span>this week</span></div>
+    <div class="stat"><b id="statBest">0</b><span>best week</span></div>
+    <div class="stat"><b id="statStarts">0</b><span>starts</span></div>
+  </div>
+
+  <button class="big" id="goStart">Start two minutes</button>
+  <button class="ghost" id="goPull">I want to quit right now</button>
+  <button class="linkish" id="goLog">What's been happening</button>
+</section>
+
+<!-- NAME THE THING -->
+<section id="naming" class="hidden">
+  <h1>Two minutes.</h1>
+  <p class="sub">That's the whole commitment. Not the task &mdash; just two
+    minutes of it. You can stop at the bell and it still counts.</p>
+
+  <label for="task">What are you avoiding?</label>
+  <input id="task" type="text" autocomplete="off" enterkeyhint="go" placeholder="the thing you keep walking past">
+  <div class="chips" id="recent"></div>
+
+  <button class="big" id="begin" disabled>Start</button>
+  <button class="linkish" id="nameBack">Not now</button>
+</section>
+
+<!-- RUNNING -->
+<section id="running" class="hidden">
+  <p class="clock" id="clock">2:00</p>
+  <p class="sub" id="runSub" style="text-align:center">two minutes on the clock</p>
+  <blockquote class="task" id="runTask"></blockquote>
+
+  <button class="ghost" id="pullDuring">I want to quit</button>
+  <button class="linkish" id="finishNow">I've stopped &mdash; end the session</button>
+</section>
+
+<!-- THE PAUSE -->
+<section id="pause" class="hidden">
+  <h1>Ninety seconds.</h1>
+  <p class="sub">Don't decide yet. The urge is loudest right now and it will
+    not stay this loud.</p>
+
+  <div class="breath"><i></i></div>
+  <p class="clock" id="pauseClock" style="font-size:44px">1:30</p>
+
+  <blockquote class="task" id="pauseTask"></blockquote>
+
+  <button class="big" id="backToIt" disabled>I'm staying</button>
+  <button class="ghost" id="imOut" disabled>I'm quitting</button>
+  <p class="note" id="pauseNote">Both buttons wake up when the timer ends.</p>
+</section>
+
+<!-- LANDED (bell rang) -->
+<section id="landed" class="hidden">
+  <h1>That's the rep.</h1>
+  <p class="sub">Two minutes done. Stopping now is a clean finish &mdash; you
+    said two and you did two.</p>
+  <blockquote class="task" id="landTask"></blockquote>
+
+  <h2>Or keep going</h2>
+  <div class="chips" id="more">
+    <button class="chip" data-min="5">5 more</button>
+    <button class="chip" data-min="10">10 more</button>
+    <button class="chip" data-min="25">25 more</button>
+  </div>
+  <button class="big" id="doneHere" style="margin-top:18px">I'm done, log it</button>
+</section>
+
+<!-- BAILED -->
+<section id="bailed" class="hidden">
+  <h1>Noted. No verdict.</h1>
+  <p class="sub">One line, while it's fresh. This is the part that shows you
+    your own pattern later.</p>
+
+  <label>What was it?</label>
+  <div class="chips" id="feelings">
+    <button class="chip" data-f="tired">tired</button>
+    <button class="chip" data-f="bored">bored</button>
+    <button class="chip" data-f="anxious">anxious</button>
+    <button class="chip" data-f="stuck">stuck</button>
+    <button class="chip" data-f="distracted">distracted</button>
+    <button class="chip" data-f="don't know">don't know</button>
+  </div>
+
+  <label for="note" style="margin-top:20px">Anything else (optional)</label>
+  <input id="note" type="text" autocomplete="off" placeholder="one line">
+
+  <button class="big" id="saveBail">Save it</button>
+</section>
+
+<!-- LOG -->
+<section id="log" class="hidden">
+  <h1>What's been happening</h1>
+  <p class="sub" id="logSummary"></p>
+
+  <h2>When you tend to fold</h2>
+  <div class="bars" id="bars"></div>
+
+  <h2>Recent</h2>
+  <ul class="entries" id="entries"></ul>
+  <p class="empty hidden" id="logEmpty">Nothing logged yet. It fills up fast.</p>
+
+  <button class="ghost" id="logBack" style="margin-top:22px">Back</button>
+</section>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
